@@ -6,6 +6,12 @@
 
 ---
 
+## 👀 界面预览
+
+![WebUI - 首页](docs/screenshots/webui-home.png)
+
+![WebUI - 关于](docs/screenshots/webui-about.png)
+
 ## 🌟 核心特性
 
 - **一键全自动**：输入博主主页链接，自动完成“采集 -> 下载 -> 转写 -> 过滤 -> 安全检测 -> AI分析 -> 生成 Skill”全流程。
