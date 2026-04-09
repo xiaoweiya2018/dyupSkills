@@ -1,0 +1,148 @@
+from typing import List, Tuple
+from urllib.parse import unquote
+
+import ujson as json
+
+from ...utils.text import quit
+from .request import Request
+from .types import APIConfig, APIEndpoint
+
+
+class DouyinClient:
+    def __init__(self, request: Request):
+        self.request = request
+
+    def fetch_aweme_detail(self, aweme_id: str) -> dict:
+        params = {"aweme_id": aweme_id}
+        uri = APIEndpoint.AWEME_DETAIL
+        resp = self.request.getJSON(uri, params)
+        aweme_detail = resp.get("aweme_detail", {})
+        if not aweme_detail:
+            quit("作品详情获取失败")
+        return aweme_detail
+
+    def fetch_awemes_list(
+        self, type: str, target_id: str, max_cursor: int, logid: str, filters: dict
+    ) -> Tuple[List[dict], int, str, bool]:
+        uri, params, data = self._build_awemes_params(type, target_id, max_cursor, logid, filters)
+        resp = self.request.getJSON(uri, params, data)
+
+        new_cursor = max_cursor
+        for name in ["max_cursor", "cursor", "min_time"]:
+            new_cursor = resp.get(name, 0)
+            if new_cursor:
+                break
+
+        if not logid:
+            logid = resp.get("log_pb", {}).get("impr_id", "")
+
+        items_list = []
+        for name in ["aweme_list", "user_list", "data", "followings", "followers"]:
+            items_list = resp.get(name, [])
+            if items_list:
+                break
+
+        has_more = resp.get("has_more", 0)
+        return items_list, new_cursor, logid, has_more
+
+    def _build_common_params(self, max_cursor: int, count: int = None) -> dict:
+        return {"cursor": max_cursor, "count": count or APIConfig.DEFAULT_COUNT}
+
+    def _build_awemes_params(
+        self, type: str, target_id: str, max_cursor: int, logid: str, filters: dict
+    ) -> Tuple[str, dict, dict]:
+        data = {}
+
+        if type == "post":
+            uri = APIEndpoint.AWEME_POST
+            params = {
+                "publish_video_strategy_type": 2,
+                "max_cursor": max_cursor,
+                "locate_query": False,
+                "show_live_replay_strategy": 1,
+                "need_time_list": 0,
+                "time_list_query": 0,
+                "whale_cut_token": "",
+                "count": APIConfig.DEFAULT_COUNT,
+                "sec_user_id": target_id,
+            }
+        elif type == "favorite":
+            uri = APIEndpoint.AWEME_FAVORITE
+            params = {
+                "sec_user_id": target_id,
+                "max_cursor": max_cursor,
+                "min_cursor": "0",
+                "whale_cut_token": "",
+                "cut_version": "1",
+                "count": APIConfig.DEFAULT_COUNT,
+                "publish_video_strategy_type": "2",
+            }
+        elif type == "collection":
+            uri = APIEndpoint.AWEME_COLLECTION
+            params = {"sec_user_id": target_id, "publish_video_strategy_type": 2}
+            data = self._build_common_params(max_cursor)
+        elif type == "music":
+            uri = APIEndpoint.MUSIC_AWEME
+            params = {**self._build_common_params(max_cursor), "music_id": target_id}
+        elif type == "hashtag":
+            uri = APIEndpoint.CHALLENGE_AWEME
+            params = {**self._build_common_params(max_cursor), "sort_type": 1, "ch_id": target_id}
+        elif type == "mix":
+            uri = APIEndpoint.MIX_AWEME
+            params = {**self._build_common_params(max_cursor), "mix_id": target_id}
+        elif type == "search":
+            filter_selected = json.dumps(
+                {
+                    "sort_type": filters.get("sort_type", "0"),
+                    "publish_time": filters.get("publish_time", "0"),
+                    "content_type": filters.get("content_type", "1"),
+                    "filter_duration": filters.get("filter_duration", "0"),
+                    "search_range": filters.get("search_range", "0"),
+                },
+                ensure_ascii=False,
+            )
+            uri = APIEndpoint.SEARCH_GENERAL
+            params = {
+                "search_channel": "aweme_general",
+                "enable_history": 1,
+                "filter_selected": filter_selected,
+                "keyword": unquote(target_id),
+                "search_source": "tab_search",
+                "query_correct_type": 1,
+                "is_filter_search": 1,
+                "from_group_id": "",
+                "disable_rs": 0,
+                "offset": max_cursor,
+                "count": APIConfig.DEFAULT_COUNT,
+                "need_filter_settings": 0,
+                "list_type": "multi",
+                "search_id": logid,
+            }
+        elif type == "following":
+            uri = APIEndpoint.USER_FOLLOWING
+            params = {
+                "sec_user_id": target_id,
+                "offset": 0,
+                "min_time": 0,
+                "max_time": max_cursor,
+                "count": APIConfig.FOLLOW_COUNT,
+                "gps_access": 0,
+                "is_top": 1,
+            }
+        elif type == "follower":
+            uri = APIEndpoint.USER_FOLLOWER
+            params = {
+                "sec_user_id": target_id,
+                "offset": 0,
+                "min_time": 0,
+                "max_time": max_cursor,
+                "count": APIConfig.FOLLOW_COUNT,
+                "gps_access": 0,
+                "is_top": 1,
+                "source_type": 3,
+            }
+        else:
+            quit(f"不支持的采集类型: {type}")
+
+        return uri, params, data
+
