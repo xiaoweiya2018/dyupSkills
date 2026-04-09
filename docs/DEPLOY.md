@@ -1,21 +1,20 @@
-# 部署手册
+# 部署手册（最新）
+
+本项目已从 OpenAI/yt-dlp 方案切换为“内置 DouyinCrawler + 火山 OpenSpeech AUC + 火山方舟（Doubao）”，输出格式为 OpenClaw 的 `SKILL.md`。
 
 ## 环境要求
 
 ### 系统要求
-- Python 3.9+
-- ffmpeg（必须安装并添加到PATH）
-- 网络连接（访问OpenAI API）
+- Python 3.10+
+- ffmpeg（必须安装并添加到 PATH）
+- 网络连接（访问抖音与火山接口）
 
 ### 依赖软件
-1. **ffmpeg** - 音频提取必需
-   - Windows: 下载ffmpeg并将bin目录添加到PATH
-   - macOS: `brew install ffmpeg`
-   - Ubuntu/Debian: `sudo apt install ffmpeg`
-
-2. **Python包** - 见 `requirements.txt`
-
----
+1. **ffmpeg**（音频提取必需）
+   - Windows：下载 ffmpeg 并将 `bin` 目录加入 PATH
+   - macOS：`brew install ffmpeg`
+   - Ubuntu/Debian：`sudo apt install ffmpeg`
+2. **Python 依赖**：见 `requirements.txt`
 
 ## 安装步骤
 
@@ -41,17 +40,14 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. 验证ffmpeg
+### 4. 验证 ffmpeg
 ```bash
 ffmpeg -version
 ```
-如果输出版本信息，说明安装成功。
-
----
 
 ## 运行方式
 
-### 方式一：Web界面（推荐）
+### 方式一：Web 界面（推荐）
 
 **Windows:**
 ```bat
@@ -69,183 +65,115 @@ chmod +x start.sh
 streamlit run app.py
 ```
 
-启动后，浏览器会自动打开 `http://localhost:8501`
+启动后浏览器访问 `http://localhost:8501`
 
-### 方式二：命令行
+### 方式二：命令行（CLI）
 
 ```bash
-# 基本用法
-python main.py -i https://www.douyin.com/user/xxxxxxxxxx -k your-openai-api-key
-
-# 指定输出目录
-python main.py -i xxxxxxx -k yyyy -o ./myoutput -c ./mycache
-
-# 使用环境变量
-export OPENAI_API_KEY=your-key
-python main.py -i https://www.douyin.com/user/xxxxxxxxxx
+python main.py --input https://www.douyin.com/user/xxxxxxxxxx ^
+  --ark-api-key <VOLC_ARK_API_KEY> ^
+  --auc-api-key <VOLC_AUC_API_KEY> ^
+  --douyin-cookie "<DOUYIN_COOKIE>"
 ```
 
-**命令行参数:**
+常用参数说明：
 ```
--i, --input      博主链接或ID (必填)
--k, --api-key    OpenAI API Key
--u, --base-url   OpenAI Base URL (可选)
--o, --output-dir 输出目录 (默认: ./output)
--c, --cache-dir  缓存目录 (默认: ./cache)
--m, --max-videos 最大视频数 (默认: 10)
---min-videos     最少合格视频数 (默认: 5)
---log-level      日志级别 (默认: INFO)
+--input              博主主页链接（必填）
+--ark-api-key         火山方舟 API Key（也可用环境变量 VOLC_ARK_API_KEY）
+--chat-model          方舟模型名（默认 doubao-seed-2-0-lite-260215）
+--auc-api-key         AUC x-api-key（也可用环境变量 VOLC_AUC_API_KEY）
+--douyin-cookie       抖音 Cookie（也可用环境变量 DOUYIN_COOKIE）
+--douyin-user-agent   抖音 User-Agent（可选）
+--max-videos          最大抓取视频数（默认 10）
+--min-videos          最少合格视频数（默认 5）
+--output-dir          输出目录（默认 ./output）
+--cache-dir           缓存目录（默认 ./cache）
 ```
-
----
 
 ## 配置说明
 
 ### 配置方式
-1. **Web界面** - 在侧边栏填写配置后点击"保存配置"
-2. **环境变量**
+1. **Web 界面**：在侧边栏填写配置后点击“保存配置”
+2. **环境变量（可选）**
    ```bash
-   export OPENAI_API_KEY=your-api-key
-   export OPENAI_BASE_URL=https://your-proxy-url/v1  # 可选
+   export VOLC_ARK_API_KEY=...
+   export VOLC_AUC_API_KEY=...
+   export DOUYIN_COOKIE=...
    ```
-3. **配置文件** - 配置保存在 `.env.json`
+3. **配置文件**：配置保存在 `.env.json`
 
-### 配置项说明
+### 配置项（核心）
+| 配置项 | 说明 |
+|---|---|
+| `volc_ark_api_key` | 火山方舟 API Key |
+| `volc_chat_model` | 方舟模型名（默认已内置） |
+| `volc_auc_api_key` | AUC x-api-key |
+| `douyincrawler_cookie` | 抖音 Cookie（必须） |
+| `douyincrawler_user_agent` | 抖音 UA（可选） |
+| `max_videos` | 最大抓取视频数 |
+| `min_videos_required` | 最少合格视频数 |
+| `output_dir` / `cache_dir` | 输出/缓存目录 |
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `openai_api_key` | OpenAI API Key | 必须 |
-| `openai_base_url` | 自定义API地址（代理用） | None |
-| `max_videos` | 最大抓取视频数 | 10 |
-| `min_videos_required` | 最少合格视频才能生成 | 5 |
-| `max_chars_per_video` | 单视频最大字符数 | 1000 |
-| `max_total_chars` | 总字符数限制 | 5000 |
-| `output_dir` | 输出目录 | `./output` |
-| `cache_dir` | 缓存目录 | `./cache` |
+说明：WebUI 中部分 Base URL / Resource ID / Model Name 已内置默认值，不需要用户填写。
 
----
-
-## 目录结构
-
-```
+## 目录结构（简化）
+```text
 抖音博主数字永生/
-├── src/                    # 源代码
-│   ├── __init__.py
-│   ├── models.py          # 数据模型
-│   ├── downloader.py      # 视频下载
-│   ├── audio.py           # 音频提取
-│   ├── transcriber.py     # 语音转写
-│   ├── filter.py          # 数据过滤
-│   ├── safety.py          # 内容安全
-│   ├── prompts.py         # Prompt模板
-│   ├── ai_generator.py    # AI生成
-│   ├── exporter.py        # 结果导出
-│   ├── storage.py         # 存储管理
-│   └── engine.py          # 主引擎
-├── tests/                  # 单元测试
-├── docs/                   # 文档
-│   ├── API.md             # API文档
-│   └── DEPLOY.md          # 部署手册
-├── app.py                 # Streamlit Web入口
-├── main.py                # 命令行入口
-├── requirements.txt       # 依赖列表
-├── pyproject.toml         # poetry配置
-├── start.bat              # Windows启动脚本
-├── start.sh               # Linux/macOS启动脚本
-├── .gitignore
+├── src/                 # 核心代码
+├── docs/                # 文档
+├── skills/              # 生成的 Skill（SKILL.md）
+├── output/              # history.json 等状态文件
+├── cache/               # 视频/音频/转写缓存（默认）
+├── app.py               # Streamlit WebUI
+├── main.py              # 命令行入口
+├── start.bat / start.sh # 启动脚本
 └── README.md
 ```
 
----
-
 ## 输出说明
 
-生成完成后，会在输出目录生成以下文件：
-
+生成完成后主要产物为：
+```text
+skills/
+└── blogger-<博主名slug>-v<version>/
+    └── SKILL.md
 ```
+
+运行状态与历史记录：
+```text
 output/
-├── history.json                  # 历史记录
-├── BloggerName_bloggerid_timestamp_full.json
-│                                # 完整结果（包含所有中间数据）
-├── BloggerName_bloggerid_timestamp_skill.json
-│                                # 仅Skill JSON（可直接导入OpenClaw）
-├── BloggerName_bloggerid_timestamp.md
-│                                # Markdown可读文档
-└── BloggerName_bloggerid_timestamp_system.txt
-                                 # 纯System Prompt文本
+└── history.json
 ```
 
----
-
-## 成本估算
-
-| 步骤 | 成本（美元） |
-|------|-------------|
-| Whisper转写 (10个视频，平均1分钟/个) | ~ $0.09 |
-| GPT-4 博主画像 | ~ $0.01-0.05 |
-| GPT-4 风格规则 | ~ $0.01-0.05 |
-| GPT-4 Skill生成 | ~ $0.05-0.15 |
-| GPT-4 评分 | ~ $0.01-0.03 |
-| **总计** | **~ $0.17-0.37** |
-
-> 10个视频全流程大约 **0.2-0.4美元**，价格仅供参考，实际以OpenAI收费为准。
-
----
+缓存目录（可随时删除以释放空间，下次会重新下载/转写）：
+```text
+cache/
+├── videos/
+└── audio/
+```
 
 ## 故障排查
 
-### 问题1: `ffmpeg: command not found`
-**解决:** 安装ffmpeg并添加到PATH
+### 问题 1：`ffmpeg: command not found`
+安装 ffmpeg 并加入 PATH 后重试。
 
-### 问题2: 下载视频失败
-**可能原因:**
-- 抖音反爬，需要cookie
-- 网络问题
+### 问题 2：提示抖音 Cookie 无效/为空
+在 WebUI 侧边栏粘贴浏览器 `Cookie:` 的完整内容（建议从抖音网页任意请求的 Request Headers 复制）。
 
-**解决:**
-yt-dlp可能需要配置cookie。可以通过浏览器开发者工具获取cookie。
+### 问题 3：AUC 报错（授权/资源不匹配）
+确认使用的是 AUC 标准版的 `x-api-key`，并确认资源已开通。出现 `X-Tt-Logid` 时可用于控制台定位。
 
-### 问题3: OpenAI API报错
-**检查:**
-1. API Key是否正确
-2. 余额是否充足
-3. 网络是否能访问OpenAI
+### 问题 4：方舟接口 404 / 模型无权限
+确认模型名（例如 `doubao-seed-2-0-lite-260215`）已在控制台开通可用。
 
-如果使用代理，需要配置 `openai_base_url`
+### 问题 5：生成过程中网络超时
+可能与本机代理/TUN 有关，可关闭全局代理后重试，或在网络更稳定环境运行。
 
-### 问题4: 生成失败，提示"合格视频不足"
-**解决:**
-- 博主可能大部分视频都是纯音乐
-- 换一个博主试试
-- 可以尝试降低 `min_videos_required`
+## 日志
 
-### 问题5: Streamlit端口被占用
-**解决:**
-```bash
-streamlit run app.py --server.port 8502
-```
-
----
-
-## 监控与日志
-
-- Web UI运行日志: `app.log`
-- 命令行运行日志: `main.log`
-- 日志自动轮转，单个文件最大10MB
-
----
-
-## 性能优化建议
-
-1. **缓存利用** - 已下载的视频和转写结果会缓存，重复生成不会重复收费
-2. **控制视频数量** - 推荐5-10个视频足够，更多视频增加成本但提升有限
-3. **代理加速** - 如果网络慢，使用代理或自定义API地址
-4. **清理缓存** - 定期删除 `cache/` 目录释放空间
-
----
+- Web UI 日志：`app.log`
+- CLI 日志：`main.log`
 
 ## 合规声明
 
-> 本工具仅用于个人学习与研究用途。
-> 用户基于本工具生成的内容所产生的一切法律责任，由用户本人承担，与本工具开发者无关。
-> 用户需确保不侵犯任何第三方（包括但不限于内容创作者、平台方）的合法权益。
+本工具仅用于个人学习与研究用途。用户使用本工具产生的一切法律责任由用户本人承担，并需确保不侵犯任何第三方合法权益。
