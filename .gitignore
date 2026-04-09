@@ -34,12 +34,32 @@ ENV/
 # Project
 cache/
 output/
+skills/
 *.log
 app.log
 main.log
 .env
 .env.json
 .env*.json
+
+# Media artifacts
+*.mp4
+*.mp3
+*.m4a
+*.wav
+*.aac
+*.flac
+
+# Local state
+state/
+data/
+logs/
+.streamlit/
+.openclaw/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
 
 # Test
 .htmlcov/
