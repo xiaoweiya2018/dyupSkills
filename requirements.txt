@@ -1,0 +1,31 @@
+# 抖音博主数字永生 - 依赖清单
+# 按照技术清单.md推荐的技术栈
+
+# 核心依赖
+streamlit>=1.28.0
+loguru>=0.7.0
+pydantic>=2.0.0
+librosa>=0.10.0
+numpy>=1.24.0
+aiohttp>=3.9.0
+requests>=2.31.0
+ujson>=5.9.0
+exejs>=0.0.7
+
+# 可选增强（声纹识别）
+# pyannote.audio>=3.0.0
+# torch>=2.0.0
+
+# 数据处理
+pandas>=2.1.0
+
+# 测试
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# 类型检查
+mypy>=1.6.0
+
+# 代码质量
+ruff>=0.1.0
